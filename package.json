@@ -1,0 +1,14 @@
+{
+    "name": "checkflow-app",
+    "version": "1.0.0",
+    "description": "CheckFlow Check Printing App",
+    "main": "index.html",
+    "scripts": {
+        "start": "vercel dev",
+        "deploy": "vercel --prod"
+    },
+    "dependencies": {
+        "firebase-admin": "^12.0.0",
+        "stripe": "^14.14.0"
+    }
+}
