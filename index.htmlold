@@ -4837,234 +4837,68 @@
 
             if (!confirm(`Print ${selectedChecks.length} selected check(s)?`)) return;
 
-            // Get calibration settings - USE CORRECT KEYS (offsetX/offsetY, not hoffset/voffset)
+            // Get calibration settings
             const calibration = JSON.parse(localStorage.getItem('cf_calibration') || '{}');
-            const offsetX = (calibration.offsetX || 0) * 72; // Convert inches to points
-            const offsetY = (calibration.offsetY || 0) * 72;
-            const checkHeight = (parseFloat(document.getElementById('checkHeight')?.value) || 3.5) * 72;
+            const hoffset = calibration.hoffset || 0;
+            const voffset = calibration.voffset || 0;
 
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'letter' });
-
-            // Helper: Convert inches to points (1 inch = 72 points)
-            const inch = (i) => i * 72;
-
-            // Apply calibration offset + empirical Y-correction from print testing
-            const offsetXPt = offsetX;
-            const offsetYPt = offsetY + inch(0.09); // Add 0.09" DOWN (empirical correction)
-            const micrOffsetYPt = offsetY + inch(0.25); // MICR-specific offset
 
             for (let i = 0; i < selectedChecks.length; i++) {
                 const c = selectedChecks[i];
 
                 if (i > 0) pdf.addPage();
 
-                // Get check data
-                const checkNo = c.checkNo || '1001';
-                const payTo = c.payTo || '';
-                const amount = c.amount || 0;
-                const memo = c.memo || '';
-                const dateStr = c.date ? new Date(c.date + 'T00:00:00').toLocaleDateString() : '';
-                const issuerName = c.issuerName || '';
-                const issuerAddr = c.issuerAddr || '';
-                const issuerCity = c.issuerCity || '';
-                const issuerState = c.issuerState || '';
-                const issuerZip = c.issuerZip || '';
-                const cityLine = `${issuerCity}${issuerState ? ', ' + issuerState : ''}${issuerZip ? ' ' + issuerZip : ''}`;
-                const bankName = c.bank || '';
-                const transit = c.transit || '';
-                const rt = (c.routing || '000000000').padStart(9, '0');
-                const ac = c.account || '000000000';
+                // Draw check on PDF (similar to printCheck but using saved check data)
+                const startX = 36 + hoffset;
+                const startY = 36 + voffset;
 
-                // Payee address
-                const payeeAddr = c.payeeAddr || '';
-                const payeeCity = c.payeeCity || '';
-                const payeeState = c.payeeState || '';
-                const payeeZip = c.payeeZip || '';
-                const payeeCityLine = `${payeeCity}${payeeState ? ', ' + payeeState : ''}${payeeZip ? ' ' + payeeZip : ''}`;
-
-                // MICR line
-                const micrLine = formatMICR(checkNo, rt, ac);
-
-                // ========== CHECK SECTION - EXACT TEMPLATE MEASUREMENTS ==========
-
-                // === ISSUER INFO (Centered Block) ===
-                const issuerCenterX = inch(2.2) + offsetXPt;
-
-                pdf.setFont('helvetica', 'bold');
-                pdf.setFontSize(12);
-                pdf.text(issuerName, issuerCenterX, inch(0.376) + offsetYPt, { align: 'center' });
-
-                pdf.setFont('helvetica', 'normal');
-                pdf.setFontSize(9);
-                pdf.text(issuerAddr, issuerCenterX, inch(0.534) + offsetYPt, { align: 'center' });
-                pdf.text(cityLine, issuerCenterX, inch(0.658) + offsetYPt, { align: 'center' });
-
-                // === BANK NAME ===
-                pdf.setFont('helvetica', 'bold');
+                // Issuer info
                 pdf.setFontSize(10);
-                pdf.text(bankName, inch(5.037) + offsetXPt, inch(0.453) + offsetYPt);
+                pdf.text(c.issuerName || '', startX, startY);
+                pdf.text(c.issuerAddr || '', startX, startY + 12);
+                pdf.text(`${c.issuerCity || ''}, ${c.issuerState || ''} ${c.issuerZip || ''}`, startX, startY + 24);
 
-                if (transit) {
-                    pdf.setFont('helvetica', 'normal');
-                    pdf.setFontSize(8);
-                    pdf.setTextColor(100);
-                    pdf.text(transit, inch(5.037) + offsetXPt, inch(0.580) + offsetYPt);
-                    pdf.setTextColor(0);
-                }
+                // Check number
+                pdf.setFontSize(10);
+                pdf.text(c.checkNo, 680, startY);
 
-                // === CHECK NUMBER ===
-                pdf.setFont('helvetica', 'bold');
-                pdf.setFontSize(14);
-                pdf.text(checkNo, inch(7.518) + offsetXPt, inch(0.329) + 10 + offsetYPt);
+                // Date
+                const dateStr = c.date ? new Date(c.date + 'T00:00:00').toLocaleDateString() : '';
+                pdf.text(dateStr, 600, startY + 50);
 
-                // === DATE ===
-                pdf.setFont('helvetica', 'normal');
-                pdf.setFontSize(8);
-                pdf.text('DATE', inch(6.492) + offsetXPt, inch(0.981) + offsetYPt);
-                pdf.setLineWidth(inch(0.0136));
-                pdf.line(inch(6.797) + offsetXPt, inch(1.118) + offsetYPt, inch(8.090) + offsetXPt, inch(1.118) + offsetYPt);
-                pdf.setLineWidth(1);
+                // Pay To
                 pdf.setFontSize(11);
-                pdf.text(dateStr, inch(7.44) + offsetXPt, inch(1.09) + offsetYPt, { align: 'center' });
+                pdf.text(c.payTo || '', startX + 70, startY + 80);
 
-                // === PAY TO THE ORDER OF ===
-                pdf.setFont('helvetica', 'normal');
-                pdf.setFontSize(8);
-                pdf.text('PAY TO THE', inch(0.258) + offsetXPt, inch(1.355) + offsetYPt);
-                pdf.text('ORDER OF', inch(0.258) + offsetXPt, inch(1.486) + offsetYPt);
+                // Amount box
+                pdf.text(formatCurrency(c.amount), 650, startY + 80);
 
-                pdf.setFontSize(11);
-                pdf.text(payTo, inch(0.950) + offsetXPt, inch(1.530) + offsetYPt);
+                // Written amount
+                const writtenAmt = c.amount > 0 ? toWords(c.amount) : '';
+                pdf.setFontSize(10);
+                pdf.text(writtenAmt, startX, startY + 110);
 
-                pdf.setLineWidth(inch(0.0136));
-                pdf.line(inch(0.789) + offsetXPt, inch(1.618) + offsetYPt, inch(6.605) + offsetXPt, inch(1.618) + offsetYPt);
-                pdf.setLineWidth(1);
-
-                // Vertical separator
-                pdf.setLineWidth(inch(0.0137));
-                pdf.line(inch(6.623) + offsetXPt, inch(1.535) + offsetYPt, inch(6.623) + offsetXPt, inch(1.625) + offsetYPt);
-                pdf.setLineWidth(1);
-
-                // === AMOUNT BOX ===
-                pdf.setFont('helvetica', 'bold');
-                pdf.setFontSize(12);
-                pdf.text('$', inch(6.766) + offsetXPt, inch(1.405) + 9 + offsetYPt);
-                pdf.rect(inch(6.75) + offsetXPt, inch(1.35) + offsetYPt, inch(1.35), inch(0.30));
-                pdf.text(formatCurrency(amount), inch(8.05) + offsetXPt, inch(1.405) + 9 + offsetYPt, { align: 'right' });
-
-                // === WRITTEN AMOUNT ===
-                pdf.setFont('helvetica', 'normal');
-                pdf.setFontSize(11);
-                pdf.text(toWords(amount), inch(0.350) + offsetXPt, inch(1.815) + offsetYPt);
-
-                pdf.setLineWidth(inch(0.0140));
-                pdf.line(inch(0.288) + offsetXPt, inch(1.949) + offsetYPt, inch(7.422) + offsetXPt, inch(1.949) + offsetYPt);
-                pdf.setLineWidth(1);
-
-                pdf.setFont('helvetica', 'bold');
+                // Memo
                 pdf.setFontSize(9);
-                pdf.text('DOLLARS', inch(7.475) + offsetXPt, inch(1.815) + offsetYPt);
+                pdf.text(c.memo || '', startX + 40, startY + 150);
 
-                // === PAYEE ADDRESS BLOCK ===
-                if (payTo && (payeeAddr || payeeCityLine)) {
-                    pdf.setFont('helvetica', 'normal');
-                    pdf.setFontSize(9);
-                    let currentY = 2.200;
-                    if (payTo) {
-                        pdf.setFont('helvetica', 'bold');
-                        pdf.text(payTo, inch(0.850) + offsetXPt, inch(currentY) + offsetYPt);
-                        currentY += 0.140;
-                        pdf.setFont('helvetica', 'normal');
-                    }
-                    if (payeeAddr) {
-                        pdf.text(payeeAddr, inch(0.850) + offsetXPt, inch(currentY) + offsetYPt);
-                        currentY += 0.140;
-                    }
-                    if (payeeCityLine) {
-                        pdf.text(payeeCityLine, inch(0.850) + offsetXPt, inch(currentY) + offsetYPt);
-                    }
-                }
-
-                // === MEMO ===
-                pdf.setFont('helvetica', 'bold');
-                pdf.setFontSize(9);
-                pdf.text('MEMO', inch(0.341) + offsetXPt, inch(2.610) + offsetYPt);
-                pdf.setFont('helvetica', 'normal');
-                pdf.text(memo, inch(0.850) + offsetXPt, inch(2.695) + offsetYPt);
-                pdf.setLineWidth(inch(0.0140));
-                pdf.line(inch(0.789) + offsetXPt, inch(2.740) + offsetYPt, inch(3.292) + offsetXPt, inch(2.740) + offsetYPt);
-                pdf.setLineWidth(1);
-
-                // === SIGNATURE ===
-                pdf.setLineWidth(inch(0.0140));
-                pdf.line(inch(5.208) + offsetXPt, inch(2.740) + offsetYPt, inch(7.711) + offsetXPt, inch(2.740) + offsetYPt);
-                pdf.setLineWidth(1);
-
-                const sigCenterX = (5.208 + 7.711) / 2;
-                pdf.setFont('helvetica', 'normal');
-                pdf.setFontSize(7);
-                pdf.setTextColor(100);
-                pdf.text('AUTHORIZED SIGNATURE', inch(sigCenterX) + offsetXPt, inch(2.92) + offsetYPt, { align: 'center' });
-                pdf.setTextColor(0);
-
-                // Add signature image if exists
+                // Signature
                 if (c.signature) {
                     try {
-                        pdf.addImage(c.signature, 'PNG', inch(5.35) + offsetXPt, inch(2.32) + offsetYPt, inch(2.0), inch(0.30));
+                        pdf.addImage(c.signature, 'PNG', 400, startY + 130, 150, 35);
                     } catch (e) { console.log('Signature error:', e); }
                 }
 
-                // === MICR LINE ===
-                let usedFont = false;
-                if (MICR_FONT_BASE64) {
-                    try {
-                        pdf.addFileToVFS('MICR.ttf', MICR_FONT_BASE64);
-                        pdf.addFont('MICR.ttf', 'MICR', 'normal');
-                        pdf.setFont('MICR', 'normal');
-                        pdf.setFontSize(18);
-                        const micrText = `C${micrLine.checkNo}C A${micrLine.routing}A ${micrLine.account}C`;
-                        pdf.text(micrText, inch(1.553) + offsetXPt, inch(3.043) + micrOffsetYPt);
-                        usedFont = true;
-                    } catch (e) {
-                        console.log('MICR font failed, using programmatic drawing:', e);
-                    }
-                }
-
-                if (!usedFont) {
-                    drawMICRLine(pdf, inch(1.553) + offsetXPt, inch(3.043) + micrOffsetYPt - 8, micrLine.checkNo, micrLine.routing, micrLine.account);
-                }
-
-                // ========== STUB 1 ==========
-                const stub1Y = checkHeight + 25;
-                pdf.setDrawColor(200);
-                pdf.setLineDashPattern([3, 3], 0);
-                pdf.line(0, checkHeight, 612, checkHeight);
-                pdf.setLineDashPattern([], 0);
-                pdf.setDrawColor(0);
-
-                pdf.setFont('helvetica', 'bold');
-                pdf.setFontSize(11);
-                pdf.text(checkNo, inch(0.5) + offsetXPt, stub1Y + 15);
-                pdf.text(`Amount: ${formatCurrency(amount, true)}`, inch(2.2) + offsetXPt, stub1Y + 15);
-                pdf.text(`Date: ${dateStr}`, inch(4.4) + offsetXPt, stub1Y + 15);
-                pdf.setFont('helvetica', 'normal');
-                pdf.text(`Pay to: ${payTo}`, inch(0.5) + offsetXPt, stub1Y + 35);
-
-                // ========== STUB 2 ==========
-                const stub2Y = checkHeight * 2 + 25;
-                pdf.setDrawColor(200);
-                pdf.setLineDashPattern([3, 3], 0);
-                pdf.line(0, checkHeight * 2, 612, checkHeight * 2);
-                pdf.setLineDashPattern([], 0);
-                pdf.setDrawColor(0);
-
-                pdf.setFont('helvetica', 'bold');
-                pdf.text(checkNo, inch(0.5) + offsetXPt, stub2Y + 15);
-                pdf.text(`Amount: ${formatCurrency(amount, true)}`, inch(2.2) + offsetXPt, stub2Y + 15);
-                pdf.text(`Date: ${dateStr}`, inch(4.4) + offsetXPt, stub2Y + 15);
-                pdf.setFont('helvetica', 'normal');
-                pdf.text(`Pay to: ${payTo}`, inch(0.5) + offsetXPt, stub2Y + 35);
+                // MICR line
+                const rt = (c.routing || '000000000').padStart(9, '0');
+                const ac = c.account || '000000000';
+                const cn = c.checkNo || '1001';
+                const micr = formatMICR(cn, rt, ac);
+                pdf.setFont('courier', 'normal');
+                pdf.setFontSize(12);
+                pdf.text(`C${micr.checkNo}C A${micr.routing}A ${micr.account}C`, startX + 100, startY + 200);
 
                 // Update check status
                 c.status = 'printed';
@@ -5093,28 +4927,11 @@
             // Then print it
             await printCheck();
 
-            // Only advance check number and clear form if we were creating NEW check (not editing)
+            // Only advance check number if we were creating NEW check (not editing)
             if (!wasEditing) {
                 const nextCheckNo = getNextAvailableCheckNo(currentAcctId);
                 document.getElementById('checkNumber').value = nextCheckNo;
-                
-                // Clear transaction fields for next check (payee, amount, memo, payee address)
-                // Keep account/bank info, signature, and issuer info intact
-                document.getElementById('payTo').value = '';
-                document.getElementById('amount').value = '';
-                document.getElementById('memo').value = '';
-                document.getElementById('payeeAddress').value = '';
-                document.getElementById('payeeCity').value = '';
-                document.getElementById('payeeState').value = '';
-                document.getElementById('payeeZip').value = '';
-                
-                // Reset date to today
-                setToday();
-                
-                // Reset editing state
-                editingCheckId = null;
-                
-                // Update preview to show cleared form with new check number
+                // Update preview to show new check number
                 updatePreview();
             }
             // If editing, preview already shows correct number - no change needed
