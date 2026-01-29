@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CheckFlow v1.1.1 - Check Printing</title>
+    <title>CheckFlow v1.1.2 - Check Printing</title>
 
     <!-- Google Analytics (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-E4RTNE5HCG"></script>
@@ -1619,32 +1619,28 @@
                         <div class="section-label"
                             style="display:flex;justify-content:space-between;align-items:center;">
                             <span>🏦 Bank & Routing (Required for Clearing)</span>
-                            <a href="#" onclick="event.preventDefault();navigateTo('accounts');"
-                                style="font-size:11px;color:var(--accent);text-decoration:none;">Edit in Accounts →</a>
+                            <a href="#" id="bankEditLink" onclick="event.preventDefault();navigateTo('accounts');"
+                                style="font-size:11px;color:var(--accent);text-decoration:none;display:none;">Edit in Accounts →</a>
                         </div>
                     </div>
                     <div class="form-grid">
                         <div class="form-group">
                             <label class="form-label">Bank Name</label>
-                            <input type="text" class="form-input" id="bankName" placeholder="e.g., Chase" readonly
-                                style="background:var(--bg-secondary);cursor:not-allowed;">
+                            <input type="text" class="form-input" id="bankName" placeholder="e.g., Chase">
                         </div>
                         <div class="form-group">
                             <label class="form-label">Routing Number <span class="required">*</span></label>
                             <input type="text" class="form-input mono" id="routingNumber" maxlength="9"
-                                placeholder="9 digits" readonly
-                                style="background:var(--bg-secondary);cursor:not-allowed;">
+                                placeholder="9 digits">
                             <span class="form-hint" id="routingHint">9-digit ABA routing number</span>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Account Number <span class="required">*</span></label>
-                            <input type="text" class="form-input mono" id="accountNumber" placeholder="Account number"
-                                readonly style="background:var(--bg-secondary);cursor:not-allowed;">
+                            <input type="text" class="form-input mono" id="accountNumber" placeholder="Account number">
                         </div>
                         <div class="form-group">
                             <label class="form-label">Transit/Fraction Code</label>
-                            <input type="text" class="form-input" id="transitCode" placeholder="e.g., 1-2/210" readonly
-                                style="background:var(--bg-secondary);cursor:not-allowed;">
+                            <input type="text" class="form-input" id="transitCode" placeholder="e.g., 1-2/210">
                         </div>
                     </div>
 
@@ -1652,35 +1648,30 @@
                         <div class="section-label"
                             style="display:flex;justify-content:space-between;align-items:center;">
                             <span>📋 Issuer Information</span>
-                            <a href="#" onclick="event.preventDefault();navigateTo('accounts');"
-                                style="font-size:11px;color:var(--accent);text-decoration:none;">Edit in Accounts →</a>
+                            <a href="#" id="issuerEditLink" onclick="event.preventDefault();navigateTo('accounts');"
+                                style="font-size:11px;color:var(--accent);text-decoration:none;display:none;">Edit in Accounts →</a>
                         </div>
                     </div>
                     <div class="form-grid">
                         <div class="form-group">
                             <label class="form-label">Issuer Name <span class="required">*</span></label>
-                            <input type="text" class="form-input" id="issuerName" placeholder="Your name or business"
-                                readonly style="background:var(--bg-secondary);cursor:not-allowed;">
+                            <input type="text" class="form-input" id="issuerName" placeholder="Your name or business">
                         </div>
                         <div class="form-group">
                             <label class="form-label">Address</label>
-                            <input type="text" class="form-input" id="issuerAddress" placeholder="Street address"
-                                readonly style="background:var(--bg-secondary);cursor:not-allowed;">
+                            <input type="text" class="form-input" id="issuerAddress" placeholder="Street address">
                         </div>
                         <div class="form-group">
                             <label class="form-label">City</label>
-                            <input type="text" class="form-input" id="issuerCity" placeholder="City" readonly
-                                style="background:var(--bg-secondary);cursor:not-allowed;">
+                            <input type="text" class="form-input" id="issuerCity" placeholder="City">
                         </div>
                         <div class="form-group">
                             <label class="form-label">State</label>
-                            <input type="text" class="form-input" id="issuerState" placeholder="ST" maxlength="2"
-                                readonly style="background:var(--bg-secondary);cursor:not-allowed;">
+                            <input type="text" class="form-input" id="issuerState" placeholder="ST" maxlength="2">
                         </div>
                         <div class="form-group">
                             <label class="form-label">ZIP</label>
-                            <input type="text" class="form-input" id="issuerZip" placeholder="12345" readonly
-                                style="background:var(--bg-secondary);cursor:not-allowed;">
+                            <input type="text" class="form-input" id="issuerZip" placeholder="12345">
                         </div>
                     </div>
 
@@ -2103,9 +2094,14 @@
                 <input type="password" class="form-input" id="loginPassword" placeholder="Password"
                     onkeypress="if(event.key==='Enter')signInWithEmail()">
             </div>
-            <button class="btn btn-primary" style="width:100%;margin-bottom:12px;" onclick="signInWithEmail()">
-                Sign In / Create Account
-            </button>
+            <div style="display:flex;gap:10px;margin-bottom:12px;">
+                <button class="btn btn-primary" style="flex:1;" onclick="signInWithEmail()">
+                    Sign In
+                </button>
+                <button class="btn btn-secondary" style="flex:1;" onclick="createAccountWithEmail()">
+                    Create Account
+                </button>
+            </div>
             <button class="btn btn-secondary"
                 style="width:100%;margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:8px;"
                 onclick="signInWithGoogle()">
@@ -2585,7 +2581,7 @@
 
     <script>
         // ========== APP VERSION ==========
-        const APP_VERSION = '1.1.1';
+        const APP_VERSION = '1.1.2';
         console.log(`CheckFlow v${APP_VERSION} loaded`);
 
         // ========== HEBREW/RTL SUPPORT ==========
@@ -3106,6 +3102,19 @@
             // initSignature(); // REMOVED - Signature now in Account modal, not Write Check page
             setToday();
 
+            // Add event listeners to save free user data when editing bank/issuer fields
+            const freeUserFields = ['bankName', 'routingNumber', 'accountNumber', 'transitCode', 
+                                    'issuerName', 'issuerAddress', 'issuerCity', 'issuerState', 'issuerZip'];
+            freeUserFields.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (field) {
+                    field.addEventListener('input', () => {
+                        saveFreeUserData();
+                        updatePreview();
+                    });
+                }
+            });
+
             // Load saved MICR font from localStorage
             const savedFont = localStorage.getItem('cf_micr_font');
             if (savedFont) {
@@ -3148,11 +3157,20 @@
 
                     // Update company stats
                     updateCompanyStats();
+                    
+                    // Update field editability based on plan
+                    updateBankFieldsEditability();
                 } else {
                     currentUser = null;
                     // Show login modal or load from localStorage
                     showLoginModal();
                     loadFromLocalStorage();
+                    
+                    // Load free user data from localStorage
+                    loadFreeUserData();
+                    
+                    // Update field editability (free user = editable)
+                    updateBankFieldsEditability();
                 }
             });
         });
@@ -3418,6 +3436,94 @@
             return '';
         }
 
+        // ========== BANK/ISSUER FIELD EDITABILITY ==========
+        // Free users: can edit directly on Write Check page (stored in localStorage)
+        // Paid users: fields locked, must edit in Accounts section
+        function updateBankFieldsEditability() {
+            const bankFields = ['bankName', 'routingNumber', 'accountNumber', 'transitCode'];
+            const issuerFields = ['issuerName', 'issuerAddress', 'issuerCity', 'issuerState', 'issuerZip'];
+            const allFields = [...bankFields, ...issuerFields];
+            
+            const isPaid = hasPaidPlan();
+            const hasSelectedAccount = !!currentAcctId;
+            
+            // If paid user with selected account → lock fields, show "Edit in Accounts" link
+            // If free user (or no account selected) → unlock fields, hide link
+            const shouldLock = isPaid && hasSelectedAccount;
+            
+            allFields.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (field) {
+                    if (shouldLock) {
+                        field.readOnly = true;
+                        field.style.background = 'var(--bg-secondary)';
+                        field.style.cursor = 'not-allowed';
+                    } else {
+                        field.readOnly = false;
+                        field.style.background = '';
+                        field.style.cursor = '';
+                    }
+                }
+            });
+            
+            // Show/hide "Edit in Accounts" links
+            const bankEditLink = document.getElementById('bankEditLink');
+            const issuerEditLink = document.getElementById('issuerEditLink');
+            
+            if (bankEditLink) {
+                bankEditLink.style.display = shouldLock ? 'inline' : 'none';
+            }
+            if (issuerEditLink) {
+                issuerEditLink.style.display = shouldLock ? 'inline' : 'none';
+            }
+            
+            console.log('updateBankFieldsEditability:', { isPaid, hasSelectedAccount, shouldLock });
+        }
+
+        // Save free user's bank/issuer data to localStorage
+        function saveFreeUserData() {
+            if (hasPaidPlan()) return; // Don't overwrite for paid users
+            
+            const freeUserData = {
+                bankName: document.getElementById('bankName')?.value || '',
+                routingNumber: document.getElementById('routingNumber')?.value || '',
+                accountNumber: document.getElementById('accountNumber')?.value || '',
+                transitCode: document.getElementById('transitCode')?.value || '',
+                issuerName: document.getElementById('issuerName')?.value || '',
+                issuerAddress: document.getElementById('issuerAddress')?.value || '',
+                issuerCity: document.getElementById('issuerCity')?.value || '',
+                issuerState: document.getElementById('issuerState')?.value || '',
+                issuerZip: document.getElementById('issuerZip')?.value || ''
+            };
+            
+            localStorage.setItem('cf_free_user_data', JSON.stringify(freeUserData));
+        }
+
+        // Load free user's bank/issuer data from localStorage
+        function loadFreeUserData() {
+            if (hasPaidPlan()) return; // Don't load for paid users
+            
+            const saved = localStorage.getItem('cf_free_user_data');
+            if (!saved) return;
+            
+            try {
+                const data = JSON.parse(saved);
+                if (data.bankName) document.getElementById('bankName').value = data.bankName;
+                if (data.routingNumber) document.getElementById('routingNumber').value = data.routingNumber;
+                if (data.accountNumber) document.getElementById('accountNumber').value = data.accountNumber;
+                if (data.transitCode) document.getElementById('transitCode').value = data.transitCode;
+                if (data.issuerName) document.getElementById('issuerName').value = data.issuerName;
+                if (data.issuerAddress) document.getElementById('issuerAddress').value = data.issuerAddress;
+                if (data.issuerCity) document.getElementById('issuerCity').value = data.issuerCity;
+                if (data.issuerState) document.getElementById('issuerState').value = data.issuerState;
+                if (data.issuerZip) document.getElementById('issuerZip').value = data.issuerZip;
+                
+                updatePreview();
+            } catch (e) {
+                console.error('Error loading free user data:', e);
+            }
+        }
+
         // Soft gate: Show pricing modal if feature requires upgrade
         function requirePaidPlan(feature, callback) {
             if (!currentUser) {
@@ -3610,6 +3716,9 @@
                     mobileUpgradeBtn.onclick = function () { showPricingModal(); toggleMobileNav(); };
                 }
             }
+            
+            // Update bank/issuer field editability when plan changes
+            updateBankFieldsEditability();
         }
 
         // ========== STRIPE DEBUG LOGGER ==========
@@ -3880,13 +3989,32 @@
             } catch (error) {
                 console.error('Sign in error:', error);
                 if (error.code === 'auth/user-not-found') {
-                    // Create new account
-                    try {
-                        await auth.createUserWithEmailAndPassword(email, password);
-                        toast('Account created and signed in');
-                    } catch (createError) {
-                        toast(createError.message, 'error');
-                    }
+                    toast('Account not found. Click "Create Account" to register.', 'error');
+                } else if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+                    toast('Incorrect password. Please try again.', 'error');
+                } else {
+                    toast(error.message, 'error');
+                }
+            }
+        }
+
+        async function createAccountWithEmail() {
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            if (!email || !password) return toast('Enter email and password', 'error');
+            if (password.length < 6) return toast('Password must be at least 6 characters', 'error');
+
+            try {
+                await auth.createUserWithEmailAndPassword(email, password);
+                toast('Account created successfully!');
+            } catch (error) {
+                console.error('Create account error:', error);
+                if (error.code === 'auth/email-already-in-use') {
+                    toast('Email already registered. Click "Sign In" to log in.', 'error');
+                } else if (error.code === 'auth/weak-password') {
+                    toast('Password is too weak. Use at least 6 characters.', 'error');
+                } else if (error.code === 'auth/invalid-email') {
+                    toast('Invalid email address.', 'error');
                 } else {
                     toast(error.message, 'error');
                 }
@@ -5740,6 +5868,7 @@
                 saveCurrentAccountSelection();
                 loadDefaults();
                 updatePreview();
+                updateBankFieldsEditability(); // Update field editability when account changes
             };
 
             // Mobile dropdown
@@ -5752,6 +5881,7 @@
                     saveCurrentAccountSelection();
                     loadDefaults();
                     updatePreview();
+                    updateBankFieldsEditability(); // Update field editability when account changes
                 };
             }
         }
