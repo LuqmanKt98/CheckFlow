@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CheckFlow v1.1.0 - Check Printing</title>
+    <title>CheckFlow v1.1.1 - Check Printing</title>
 
     <!-- Google Analytics (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-E4RTNE5HCG"></script>
@@ -2585,7 +2585,7 @@
 
     <script>
         // ========== APP VERSION ==========
-        const APP_VERSION = '1.1.0';
+        const APP_VERSION = '1.1.1';
         console.log(`CheckFlow v${APP_VERSION} loaded`);
 
         // ========== HEBREW/RTL SUPPORT ==========
@@ -3718,7 +3718,19 @@
                     stack: error.stack
                 }, 'error');
                 console.error('Billing portal error:', error);
-                toast('Unable to open billing portal', 'error');
+                
+                // Check if this is a "subscription not found" error (sandbox migration issue)
+                if (error.message && (error.message.includes('No such subscription') || error.message.includes('subscription'))) {
+                    toast(`
+                        <div style="margin-bottom:8px;"><strong>Billing Portal Error</strong></div>
+                        <div style="margin-bottom:12px;font-size:12px;">Your subscription data needs to be reset (likely from test mode).</div>
+                        <button onclick="resetSubscriptionData()" style="background:#fbbf24;border:none;padding:8px 16px;border-radius:6px;font-weight:600;cursor:pointer;">
+                            🔄 Reset & Fix
+                        </button>
+                    `, 'error', 10000);
+                } else {
+                    toast('Unable to open billing portal', 'error');
+                }
             }
         }
 
