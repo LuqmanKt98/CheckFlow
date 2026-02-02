@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CheckFlow v1.2.1 - Check Printing</title>
+    <title>CheckFlow v1.1.2 - Check Printing</title>
 
     <!-- Google Analytics (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-E4RTNE5HCG"></script>
@@ -2360,7 +2360,7 @@
                     <div class="pricing-card">
                         <h3>Pro – Per Account</h3>
                         <div class="price">$1<span>/account/mo</span></div>
-                        <p class="trial" id="trialText1">✨ 60-day free trial</p>
+                        <p class="trial">✨ 60-day free trial</p>
                         <ul class="pricing-features">
                             <li style="color:var(--success);">✓ Everything in Free</li>
                             <li style="color:var(--success);">✓ Save checks & history</li>
@@ -2369,7 +2369,7 @@
                             <li style="color:var(--success);">✓ Cloud sync across devices</li>
                             <li style="color:var(--success);">✓ Pay only for what you use</li>
                         </ul>
-                        <button class="btn btn-primary" id="checkoutBtn1" onclick="startCheckout('per_account')"
+                        <button class="btn btn-primary" onclick="startCheckout('per_account')"
                             style="width:100%;margin-top:auto;">Start Free Trial</button>
                     </div>
 
@@ -2378,7 +2378,7 @@
                         <div class="pricing-badge">RECOMMENDED</div>
                         <h3>Pro – Unlimited</h3>
                         <div class="price">$5<span>/month</span></div>
-                        <p class="trial" id="trialText2">✨ 60-day free trial</p>
+                        <p class="trial">✨ 60-day free trial</p>
                         <ul class="pricing-features">
                             <li style="color:var(--success);">✓ Everything in Pro</li>
                             <li style="color:var(--success);">✓ Unlimited bank accounts</li>
@@ -2387,12 +2387,12 @@
                             <li style="color:var(--success);">✓ Best for businesses</li>
                             <li style="color:var(--success);">✓ One simple price</li>
                         </ul>
-                        <button class="btn btn-primary" id="checkoutBtn2" onclick="startCheckout('unlimited')"
+                        <button class="btn btn-primary" onclick="startCheckout('unlimited')"
                             style="width:100%;margin-top:auto;">Start Free Trial</button>
                     </div>
                 </div>
 
-                <p id="trialNote" style="text-align:center;margin-top:20px;font-size:13px;color:var(--text-secondary);">
+                <p style="text-align:center;margin-top:20px;font-size:13px;color:var(--text-secondary);">
                     🔒 No bank access. We don't move money. We only help you print checks.<br>
                     Cancel anytime during your trial. No charge until trial ends.
                 </p>
@@ -2581,7 +2581,7 @@
 
     <script>
         // ========== APP VERSION ==========
-        const APP_VERSION = '1.2.1';
+        const APP_VERSION = '1.1.2';
         console.log(`CheckFlow v${APP_VERSION} loaded`);
 
         // ========== HEBREW/RTL SUPPORT ==========
@@ -2598,70 +2598,13 @@
             return rtlChars > ltrChars;
         }
 
-        // Render Hebrew/RTL text as an image using Canvas (Canvas supports Hebrew natively)
-        // Returns { dataUrl, width, height } for use with pdf.addImage()
-        function renderTextAsImage(text, fontSize = 12, fontFamily = 'Arial, David, sans-serif') {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            
-            // Set font to measure text
-            ctx.font = `${fontSize}px ${fontFamily}`;
-            const metrics = ctx.measureText(text);
-            
-            // Set canvas size with padding
-            const padding = 4;
-            canvas.width = Math.ceil(metrics.width) + padding * 2;
-            canvas.height = Math.ceil(fontSize * 1.3) + padding * 2;
-            
-            // Clear and set up for drawing
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.font = `${fontSize}px ${fontFamily}`;
-            ctx.fillStyle = '#000000';
-            ctx.textBaseline = 'top';
-            
-            // For RTL text, align right
-            if (isRTL(text)) {
-                ctx.direction = 'rtl';
-                ctx.textAlign = 'right';
-                ctx.fillText(text, canvas.width - padding, padding);
-            } else {
-                ctx.textAlign = 'left';
-                ctx.fillText(text, padding, padding);
-            }
-            
-            return {
-                dataUrl: canvas.toDataURL('image/png'),
-                width: canvas.width,
-                height: canvas.height
-            };
-        }
-
-        // Add Hebrew/RTL text to PDF - uses image rendering for proper display
-        // pdf: jsPDF instance, text: string, x: x position (points), y: y position (points), fontSize: in points
-        function addTextToPDF(pdf, text, x, y, fontSize = 12, align = 'left') {
-            if (!text) return;
-            
-            if (isRTL(text)) {
-                // Render as image for Hebrew/RTL support
-                const rendered = renderTextAsImage(text, fontSize * 1.2); // Scale up slightly for clarity
-                
-                // Convert pixel dimensions to points (assuming 96 DPI screen, 72 DPI PDF)
-                const scale = 72 / 96;
-                const imgWidth = rendered.width * scale;
-                const imgHeight = rendered.height * scale;
-                
-                // Adjust x position for right alignment if needed
-                let drawX = x;
-                if (align === 'right') {
-                    drawX = x - imgWidth;
-                }
-                
-                // Add image to PDF (y adjusted for baseline alignment)
-                pdf.addImage(rendered.dataUrl, 'PNG', drawX, y - fontSize * 0.8, imgWidth, imgHeight);
-            } else {
-                // Regular text - use standard jsPDF text
-                pdf.text(text, x, y, { align: align });
-            }
+        // Prepare text for PDF rendering - handles RTL text by reversing
+        // jsPDF doesn't natively support RTL, so we reverse the string
+        function prepareTextForPDF(text) {
+            if (!text) return '';
+            if (!isRTL(text)) return text;
+            // For RTL text, reverse character order for proper PDF display
+            return text.split('').reverse().join('');
         }
 
         // Firebase Configuration
@@ -3260,7 +3203,6 @@
             stripeLog('showPricingModal', {
                 currentPlan: userPlan.plan,
                 status: userPlan.status,
-                hasUsedTrial: userPlan.hasUsedTrial,
                 userId: currentUser?.uid
             });
 
@@ -3309,59 +3251,10 @@
                 // Show upgrade view
                 upgradeView.style.display = 'block';
                 subscriptionView.style.display = 'none';
-                
-                // Update trial display based on whether user has already used trial
-                updateTrialDisplay();
-                
-                trackEvent('pricing_modal_shown', { hasUsedTrial: userPlan.hasUsedTrial || false });
+                trackEvent('pricing_modal_shown');
             }
 
             document.getElementById('pricingModal').classList.add('active');
-        }
-
-        // Update pricing modal to show if trial has been used
-        function updateTrialDisplay() {
-            const hasUsedTrial = userPlan.hasUsedTrial || false;
-            
-            const trialText1 = document.getElementById('trialText1');
-            const trialText2 = document.getElementById('trialText2');
-            const checkoutBtn1 = document.getElementById('checkoutBtn1');
-            const checkoutBtn2 = document.getElementById('checkoutBtn2');
-            const trialNote = document.getElementById('trialNote');
-            
-            if (hasUsedTrial) {
-                // User has already used trial - show "Subscribe" instead of "Start Free Trial"
-                if (trialText1) {
-                    trialText1.textContent = '(Trial already used)';
-                    trialText1.style.color = 'var(--text-muted)';
-                }
-                if (trialText2) {
-                    trialText2.textContent = '(Trial already used)';
-                    trialText2.style.color = 'var(--text-muted)';
-                }
-                if (checkoutBtn1) checkoutBtn1.textContent = 'Subscribe Now';
-                if (checkoutBtn2) checkoutBtn2.textContent = 'Subscribe Now';
-                if (trialNote) {
-                    trialNote.innerHTML = '🔒 No bank access. We don\'t move money. We only help you print checks.<br>' +
-                        '<span style="color:var(--warning);">Note: You\'ve already used your free trial. Billing starts immediately.</span>';
-                }
-            } else {
-                // Reset to default trial text
-                if (trialText1) {
-                    trialText1.textContent = '✨ 60-day free trial';
-                    trialText1.style.color = '';
-                }
-                if (trialText2) {
-                    trialText2.textContent = '✨ 60-day free trial';
-                    trialText2.style.color = '';
-                }
-                if (checkoutBtn1) checkoutBtn1.textContent = 'Start Free Trial';
-                if (checkoutBtn2) checkoutBtn2.textContent = 'Start Free Trial';
-                if (trialNote) {
-                    trialNote.innerHTML = '🔒 No bank access. We don\'t move money. We only help you print checks.<br>' +
-                        'Cancel anytime during your trial. No charge until trial ends.';
-                }
-            }
         }
 
         function closePricingModal() {
@@ -3690,13 +3583,6 @@
                         updatedAt: new Date().toISOString()
                     };
 
-                    // ✅ NEW: Mark that user has used their trial (permanent flag)
-                    // This prevents them from getting another trial if they cancel and re-subscribe
-                    if (data.hasUsedTrial || data.status === 'trialing') {
-                        updateData.hasUsedTrial = true;
-                        stripeLog('verifyAndActivatePlan:markingTrialUsed', { userId: currentUser.uid });
-                    }
-
                     stripeLog('verifyAndActivatePlan:writingToFirestore', {
                         userId: currentUser.uid,
                         updateData
@@ -3739,58 +3625,21 @@
             try {
                 stripeLog('loadUserPlan:setupListener', { userId: currentUser.uid });
 
-                // Track previous plan state to detect downgrades
-                let previousPlan = userPlan.plan;
-                let previousStatus = userPlan.status;
-
                 // Real-time listener
                 unsubscribePlan = db.collection('users').doc(currentUser.uid)
-                    .onSnapshot(async (doc) => {
+                    .onSnapshot((doc) => {
                         if (doc.exists) {
                             const data = doc.data();
-                            const newPlan = data.plan || 'free';
-                            const newStatus = data.status || data.subscriptionStatus || null;
-                            
-                            // Detect downgrade: was paid/trialing, now free/canceled
-                            const wasPaid = (previousPlan !== 'free' && (previousStatus === 'active' || previousStatus === 'trialing'));
-                            const isNowFree = (newPlan === 'free' || newStatus === 'canceled' || newStatus === 'past_due');
-                            const isNowPaid = (newPlan !== 'free' && (newStatus === 'active' || newStatus === 'trialing'));
-                            const wasFree = (previousPlan === 'free' || !previousStatus);
-                            
-                            // Detect DOWNGRADE: paid → free
-                            if (wasPaid && isNowFree) {
-                                stripeLog('loadUserPlan:downgradeDetected', { 
-                                    from: { plan: previousPlan, status: previousStatus },
-                                    to: { plan: newPlan, status: newStatus }
-                                }, 'warn');
-                                await handleSubscriptionDowngrade();
-                            }
-                            
-                            // Detect UPGRADE: free → paid (reload hidden accounts!)
-                            if (wasFree && isNowPaid) {
-                                stripeLog('loadUserPlan:upgradeDetected', { 
-                                    from: { plan: previousPlan, status: previousStatus },
-                                    to: { plan: newPlan, status: newStatus }
-                                }, 'success');
-                                await reloadAccountsFromFirestore();
-                            }
-                            
-                            // Update current plan
+                            // Fix: Check both 'status' and 'subscriptionStatus'
                             userPlan = {
-                                plan: newPlan,
-                                status: newStatus,
+                                plan: data.plan || 'free',
+                                status: data.status || data.subscriptionStatus || null,
                                 stripeCustomerId: data.stripeCustomerId || null,
                                 subscriptionId: data.subscriptionId || null,
                                 trialEndsAt: data.trialEndsAt ? (data.trialEndsAt.toDate ? data.trialEndsAt.toDate() : new Date(data.trialEndsAt)) : null,
                                 currentPeriodEnd: data.currentPeriodEnd ? (data.currentPeriodEnd.toDate ? data.currentPeriodEnd.toDate() : new Date(data.currentPeriodEnd)) : null,
-                                quantity: data.quantity || 0,
-                                hasUsedTrial: data.hasUsedTrial || false
+                                quantity: data.quantity || 0
                             };
-                            
-                            // Update previous for next comparison
-                            previousPlan = newPlan;
-                            previousStatus = newStatus;
-                            
                             stripeLog('loadUserPlan:loaded', { userPlan }, 'success');
                         } else {
                             userPlan = { plan: 'free', status: null };
@@ -3798,130 +3647,12 @@
                         updatePlanDisplay();
                         // Also update bank fields since permissions might change
                         if (typeof updateBankFieldsEditability === 'function') updateBankFieldsEditability();
-                        
-                        // Enforce account limits for free users (hides accounts, doesn't delete)
-                        if (typeof enforceAccountLimitsOnLoad === 'function') enforceAccountLimitsOnLoad();
                     }, (error) => {
                         console.error('Plan listener error:', error);
                         stripeLog('loadUserPlan:error', { message: error.message }, 'error');
                     });
             } catch (e) {
                 console.error('Failed to setup plan listener:', e);
-            }
-        }
-
-        // ========== DOWNGRADE HANDLER ==========
-        // When subscription ends: HIDE accounts (not delete), keep checks
-        // If user re-subscribes, accounts will be restored
-        async function handleSubscriptionDowngrade() {
-            if (!currentUser) return;
-            
-            stripeLog('handleSubscriptionDowngrade:start', { userId: currentUser.uid });
-            
-            // ✅ HIDE accounts locally (NOT deleted from Firestore - data preserved!)
-            const hiddenCount = accounts.length;
-            
-            if (hiddenCount === 0) {
-                stripeLog('handleSubscriptionDowngrade:noAccounts', {});
-                return;
-            }
-            
-            // Clear local accounts (Firestore data preserved)
-            accounts = [];
-            currentAcctId = '';
-            localStorage.removeItem('cf_current');
-            
-            // Update UI
-            renderDropdown();
-            renderAccounts();
-            
-            stripeLog('handleSubscriptionDowngrade:accountsHidden', { count: hiddenCount }, 'success');
-            
-            // Notify user
-            toast(`Your subscription has ended. ${hiddenCount} account(s) hidden. Re-subscribe to restore them. Check history is preserved.`, 'info', 8000);
-            
-            trackEvent('subscription_downgrade', { accountsHidden: hiddenCount });
-        }
-
-        // ========== ENFORCE ACCOUNT LIMITS ON LOAD ==========
-        // HIDE accounts for free users (data preserved in Firestore, just hidden locally)
-        // When they upgrade, accounts will be reloaded and visible again
-        async function enforceAccountLimitsOnLoad() {
-            if (!currentUser) return;
-            
-            // Only run for free users who have accounts
-            if (hasPaidPlan()) {
-                stripeLog('enforceAccountLimitsOnLoad:paidUser', { plan: userPlan.plan });
-                return;
-            }
-            
-            // Check if user has any accounts loaded
-            if (accounts.length === 0) {
-                stripeLog('enforceAccountLimitsOnLoad:noAccounts', {});
-                return;
-            }
-            
-            stripeLog('enforceAccountLimitsOnLoad:hidingAccounts', { 
-                userId: currentUser.uid,
-                accountCount: accounts.length 
-            }, 'warn');
-            
-            // ✅ HIDE accounts locally (NOT deleted from Firestore - data preserved!)
-            const hiddenCount = accounts.length;
-            accounts = [];
-            currentAcctId = '';
-            localStorage.removeItem('cf_current');
-            
-            // Update UI
-            renderDropdown();
-            renderAccounts();
-            loadDefaults();
-            updatePreview();
-            updateBankFieldsEditability();
-            
-            // Load free user data from localStorage instead
-            loadFreeUserData();
-            
-            // Notify user
-            toast(`Free plan: ${hiddenCount} saved account(s) hidden. Upgrade to access them again.`, 'info', 6000);
-            
-            trackEvent('free_user_accounts_hidden', { accountsHidden: hiddenCount });
-        }
-
-        // Reload accounts from Firestore (called when user upgrades)
-        async function reloadAccountsFromFirestore() {
-            if (!currentUser) return;
-            
-            stripeLog('reloadAccountsFromFirestore:start', { userId: currentUser.uid });
-            
-            try {
-                const accountsSnap = await db.collection('users').doc(currentUser.uid).collection('accounts').get();
-                accounts = [];
-                accountsSnap.forEach(doc => accounts.push(doc.data()));
-                
-                stripeLog('reloadAccountsFromFirestore:loaded', { count: accounts.length }, 'success');
-                
-                // Select default account if available
-                if (accounts.length > 0) {
-                    const defaultAccount = accounts.find(a => a.isDefault);
-                    currentAcctId = defaultAccount ? defaultAccount.id : accounts[0].id;
-                    saveCurrentAccountSelection();
-                }
-                
-                // Update UI
-                renderDropdown();
-                renderAccounts();
-                loadDefaults();
-                updatePreview();
-                updateBankFieldsEditability();
-                
-                if (accounts.length > 0) {
-                    toast(`🎉 ${accounts.length} saved account(s) restored!`, 'success');
-                }
-                
-            } catch (error) {
-                console.error('Error reloading accounts:', error);
-                stripeLog('reloadAccountsFromFirestore:error', { message: error.message }, 'error');
             }
         }
 
@@ -4120,23 +3851,16 @@
                 stripeLog('startCheckout:error', { reason: 'No user logged in' }, 'error');
                 closePricingModal();
                 showLoginModal();
-                toast('Please sign in first to subscribe', 'error');
+                toast('Please sign in first to start your trial', 'error');
                 return;
             }
 
-            // Check if user has already used their trial
-            const hasUsedTrial = userPlan.hasUsedTrial || false;
-            if (hasUsedTrial) {
-                stripeLog('startCheckout:trialAlreadyUsed', { userId: currentUser.uid });
-                toast('Starting subscription (no trial - trial already used)', 'info');
-            }
-
-            trackEvent('checkout_started', { plan, hasUsedTrial });
+            trackEvent('checkout_started', { plan });
 
             try {
                 // Get current account count for per_account plan
                 const accountCount = accounts.length || 1;
-                stripeLog('startCheckout:accountCount', { accountCount, plan, hasUsedTrial });
+                stripeLog('startCheckout:accountCount', { accountCount, plan });
 
                 // Get ID token for authentication
                 stripeLog('startCheckout:gettingToken');
@@ -4151,8 +3875,7 @@
                     plan,
                     accountCount,
                     uid: currentUser.uid,
-                    email: currentUser.email,
-                    hasUsedTrial: hasUsedTrial // Tell backend whether to include trial
+                    email: currentUser.email
                 };
                 stripeLog('startCheckout:callingAPI', { url, body });
 
@@ -5613,12 +5336,12 @@
                 pdf.text(`Date: ${dateStr}`, inch(4.4) + offsetXPt, stub1Y + 15);
                 pdf.setFont('helvetica', 'normal');
                 pdf.text(`Pay to: ${payTo}`, inch(0.5) + offsetXPt, stub1Y + 35);
-                // Add memo to stub 1 (with Hebrew/RTL support)
+                // Add memo to stub 1 (with RTL support)
                 if (memo) {
-                    pdf.text('Memo: ', inch(0.5) + offsetXPt, stub1Y + 55);
-                    const memoX = isRTL(memo) ? inch(7.5) + offsetXPt : inch(1.0) + offsetXPt;
+                    const memoForPDF = prepareTextForPDF(memo);
                     const memoAlign = isRTL(memo) ? 'right' : 'left';
-                    addTextToPDF(pdf, memo, memoX, stub1Y + 55, 11, memoAlign);
+                    const memoX = isRTL(memo) ? inch(7.5) + offsetXPt : inch(0.5) + offsetXPt;
+                    pdf.text(`Memo: ${memoForPDF}`, memoX, stub1Y + 55, { align: memoAlign });
                 }
 
                 // ========== STUB 2 ==========
@@ -5635,12 +5358,12 @@
                 pdf.text(`Date: ${dateStr}`, inch(4.4) + offsetXPt, stub2Y + 15);
                 pdf.setFont('helvetica', 'normal');
                 pdf.text(`Pay to: ${payTo}`, inch(0.5) + offsetXPt, stub2Y + 35);
-                // Add memo to stub 2 (with Hebrew/RTL support)
+                // Add memo to stub 2 (with RTL support)
                 if (memo) {
-                    pdf.text('Memo: ', inch(0.5) + offsetXPt, stub2Y + 55);
-                    const memoX = isRTL(memo) ? inch(7.5) + offsetXPt : inch(1.0) + offsetXPt;
+                    const memoForPDF = prepareTextForPDF(memo);
                     const memoAlign = isRTL(memo) ? 'right' : 'left';
-                    addTextToPDF(pdf, memo, memoX, stub2Y + 55, 11, memoAlign);
+                    const memoX = isRTL(memo) ? inch(7.5) + offsetXPt : inch(0.5) + offsetXPt;
+                    pdf.text(`Memo: ${memoForPDF}`, memoX, stub2Y + 55, { align: memoAlign });
                 }
 
                 // Update check status
@@ -6004,15 +5727,13 @@
             pdf.text('MEMO', inch(0.341) + offsetXPt, inch(2.610) + offsetYPt);
 
             pdf.setFont('helvetica', 'normal');
-            pdf.setFontSize(9);
-            // Use addTextToPDF for Hebrew/RTL support (renders as image if needed)
-            if (memo) {
-                if (isRTL(memo)) {
-                    // For RTL text, position near right edge of memo area
-                    addTextToPDF(pdf, memo, inch(3.2) + offsetXPt, inch(2.695) + offsetYPt, 9, 'right');
-                } else {
-                    addTextToPDF(pdf, memo, inch(0.850) + offsetXPt, inch(2.695) + offsetYPt, 9, 'left');
-                }
+            // Apply RTL support for Hebrew memo text
+            const memoForCheckFace = prepareTextForPDF(memo);
+            if (isRTL(memo)) {
+                // For RTL text, align right within memo area
+                pdf.text(memoForCheckFace, inch(3.2) + offsetXPt, inch(2.695) + offsetYPt, { align: 'right' });
+            } else {
+                pdf.text(memoForCheckFace, inch(0.850) + offsetXPt, inch(2.695) + offsetYPt);
             }
 
             // Memo underline: from x=0.789" to x=3.292", y=2.740", thickness=0.0140"
@@ -6090,12 +5811,12 @@
             pdf.text(`Date: ${dateStr}`, inch(4.4) + offsetXPt, stub1Y + 15);
             pdf.setFont('helvetica', 'normal');
             pdf.text(`Pay to: ${payTo}`, inch(0.5) + offsetXPt, stub1Y + 35);
-            // Add memo to stub 1 (with Hebrew/RTL support)
+            // Add memo to stub 1 (with RTL support)
             if (memo) {
-                pdf.text('Memo: ', inch(0.5) + offsetXPt, stub1Y + 55);
-                const memoX = isRTL(memo) ? inch(7.5) + offsetXPt : inch(1.0) + offsetXPt;
+                const memoForPDF = prepareTextForPDF(memo);
                 const memoAlign = isRTL(memo) ? 'right' : 'left';
-                addTextToPDF(pdf, memo, memoX, stub1Y + 55, 11, memoAlign);
+                const memoX = isRTL(memo) ? inch(7.5) + offsetXPt : inch(0.5) + offsetXPt;
+                pdf.text(`Memo: ${memoForPDF}`, memoX, stub1Y + 55, { align: memoAlign });
             }
 
             // ========== STUB 2 ==========
@@ -6112,12 +5833,12 @@
             pdf.text(`Date: ${dateStr}`, inch(4.4) + offsetXPt, stub2Y + 15);
             pdf.setFont('helvetica', 'normal');
             pdf.text(`Pay to: ${payTo}`, inch(0.5) + offsetXPt, stub2Y + 35);
-            // Add memo to stub 2 (with Hebrew/RTL support)
+            // Add memo to stub 2 (with RTL support)
             if (memo) {
-                pdf.text('Memo: ', inch(0.5) + offsetXPt, stub2Y + 55);
-                const memoX = isRTL(memo) ? inch(7.5) + offsetXPt : inch(1.0) + offsetXPt;
+                const memoForPDF = prepareTextForPDF(memo);
                 const memoAlign = isRTL(memo) ? 'right' : 'left';
-                addTextToPDF(pdf, memo, memoX, stub2Y + 55, 11, memoAlign);
+                const memoX = isRTL(memo) ? inch(7.5) + offsetXPt : inch(0.5) + offsetXPt;
+                pdf.text(`Memo: ${memoForPDF}`, memoX, stub2Y + 55, { align: memoAlign });
             }
 
             // Generate filename and download
